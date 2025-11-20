@@ -1,0 +1,20 @@
+Collecting azure-ai-projects
+  Downloading azure_ai_projects-2.0.0b2-py3-none-any.whl.metadata (63 kB)
+Collecting isodate>=0.6.1 (from azure-ai-projects)
+  Downloading isodate-0.7.2-py3-none-any.whl.metadata (11 kB)
+Requirement already satisfied: azure-core>=1.35.0 in /home/risado/.local/lib/python3.10/site-packages (from azure-ai-projects) (1.36.0)
+Requirement already satisfied: typing-extensions>=4.6.0 in /home/risado/.local/lib/python3.10/site-packages (from azure-ai-projects) (4.15.0)
+Collecting azure-storage-blob>=12.15.0 (from azure-ai-projects)
+  Downloading azure_storage_blob-12.27.1-py3-none-any.whl.metadata (26 kB)
+Requirement already satisfied: requests>=2.21.0 in /home/risado/.local/lib/python3.10/site-packages (from azure-core>=1.35.0->azure-ai-projects) (2.31.0)
+Requirement already satisfied: cryptography>=2.1.4 in /usr/lib/python3/dist-packages (from azure-storage-blob>=12.15.0->azure-ai-projects) (3.4.8)
+Requirement already satisfied: charset-normalizer<4,>=2 in /home/risado/.local/lib/python3.10/site-packages (from requests>=2.21.0->azure-core>=1.35.0->azure-ai-projects) (3.4.4)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests>=2.21.0->azure-core>=1.35.0->azure-ai-projects) (3.3)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/lib/python3/dist-packages (from requests>=2.21.0->azure-core>=1.35.0->azure-ai-projects) (1.26.5)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests>=2.21.0->azure-core>=1.35.0->azure-ai-projects) (2020.6.20)
+Downloading azure_ai_projects-2.0.0b2-py3-none-any.whl (234 kB)
+Downloading azure_storage_blob-12.27.1-py3-none-any.whl (428 kB)
+Downloading isodate-0.7.2-py3-none-any.whl (22 kB)
+Installing collected packages: isodate, azure-storage-blob, azure-ai-projects
+
+Successfully installed azure-ai-projects-2.0.0b2 azure-storage-blob-12.27.1 isodate-0.7.2

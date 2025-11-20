@@ -1,0 +1,6 @@
+python-telegram-bot==20.7
+requests==2.31.0
+schedule==1.2.0
+python-dotenv==1.0.0
+azure-identity==1.15.0
+azure-ai-projects>=2.0.0b1
