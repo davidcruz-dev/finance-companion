@@ -17,15 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY bitcoin_trading_bot.py .
-COPY .env .
 
 # Create non-root user for security
 RUN useradd -m -u 1001 botuser && chown -R botuser:botuser /app
 USER botuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+# Health check removed for Railway deployment
 
 # Run the bot
 CMD ["python", "bitcoin_trading_bot.py"]

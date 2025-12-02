@@ -4,8 +4,6 @@
     "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "python bitcoin_trading_bot.py",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 300
+    "startCommand": "python bitcoin_trading_bot.py"
   }
 }
