@@ -51,21 +51,22 @@ class BitcoinTradingBot:
     async def query_foundry_agent(self):
         """Query the Microsoft Foundry agent for Bitcoin analysis"""
         try:
-            # Use Azure AI Projects SDK
-            myEndpoint = "https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion"
+            # Use direct API approach with API key to avoid authentication issues
+            foundry_api_key = os.getenv('FOUNDRY_API_KEY')
+            foundry_endpoint = os.getenv('FOUNDRY_ENDPOINT', 'https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion')
             
-            # AIProjectClient only supports DefaultAzureCredential (not AzureKeyCredential)
-            logger.info("Using DefaultAzureCredential for Azure AI Projects authentication")
-            project_client = AIProjectClient(
-                endpoint=myEndpoint,
-                credential=DefaultAzureCredential()
+            if not foundry_api_key:
+                raise Exception("FOUNDRY_API_KEY not configured")
+            
+            logger.info("Using direct API call with API key for Azure AI Foundry")
+            
+            # Create OpenAI client with Azure endpoint and API key
+            import openai
+            openai_client = openai.AsyncOpenAI(
+                api_key=foundry_api_key,
+                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai",
+                api_version="2024-10-21"
             )
-            
-            myAgent = "FinanceCompanion"
-            agent = project_client.agents.get(agent_name=myAgent)
-            logger.info(f"Retrieved agent: {agent.name}")
-            
-            openai_client = project_client.get_openai_client()
             
             # Get current Bitcoin price locally (since Foundry can't access live APIs reliably)
             current_price = await self.get_current_btc_price()
@@ -96,16 +97,18 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             
             for attempt in range(max_retries):
                 try:
-                    response = openai_client.chat.completions.create(
-                        model="gpt-4o",
+                    # Use direct chat completion without agent reference for now
+                    response = await openai_client.chat.completions.create(
+                        model="gpt-4o", 
                         messages=[{"role": "user", "content": prompt}],
-                        extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
+                        temperature=0.7,
+                        max_tokens=2000
                     )
                     break  # Success, exit retry loop
                 except Exception as e:
                     if "429" in str(e) and attempt < max_retries - 1:
                         logger.info(f"Rate limit hit, waiting {retry_delay} seconds before retry {attempt + 1}")
-                        time.sleep(retry_delay)
+                        await asyncio.sleep(retry_delay)
                         continue
                     else:
                         raise e  # Re-raise if not rate limit or max retries reached
@@ -206,16 +209,16 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             Combine this screenshot analysis with current market conditions to provide comprehensive trading guidance.
             """
             
-            # Query Foundry agent with screenshot data
-            myEndpoint = "https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion"
+            # Query Foundry agent with screenshot data using direct API
+            foundry_api_key = os.getenv('FOUNDRY_API_KEY')
+            foundry_endpoint = os.getenv('FOUNDRY_ENDPOINT', 'https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion')
             
-            project_client = AIProjectClient(
-                endpoint=myEndpoint,
-                credential=DefaultAzureCredential()
+            import openai
+            openai_client = openai.AsyncOpenAI(
+                api_key=foundry_api_key,
+                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai",
+                api_version="2024-10-21"
             )
-            
-            agent = project_client.agents.get(agent_name="FinanceCompanion")
-            openai_client = project_client.get_openai_client()
             
             # Add retry logic for rate limits
             import time
@@ -224,16 +227,17 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             
             for attempt in range(max_retries):
                 try:
-                    response = openai_client.chat.completions.create(
+                    response = await openai_client.chat.completions.create(
                         model="gpt-4o",
                         messages=[{"role": "user", "content": enhanced_prompt}],
-                        extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
+                        temperature=0.7,
+                        max_tokens=2000
                     )
                     break
                 except Exception as e:
                     if "429" in str(e) and attempt < max_retries - 1:
                         logger.info(f"Rate limit hit, waiting {retry_delay} seconds before retry {attempt + 1}")
-                        time.sleep(retry_delay)
+                        await asyncio.sleep(retry_delay)
                         continue
                     else:
                         raise e
@@ -523,17 +527,17 @@ Focus on education, not trading advice. Include appropriate educational disclaim
         user_message = update.message.text
         await update.message.reply_text("⏳ Analyzing your request...\n\n🤖 Connecting to Foundry agent\n⚡ Estimated wait: 1-3 minutes\n📊 Running comprehensive analysis\n\nPlease wait, quality analysis takes time...")
         
-        # Query Foundry agent with user's message
+        # Query Foundry agent with user's message using direct API
         try:
-            myEndpoint = "https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion"
+            foundry_api_key = os.getenv('FOUNDRY_API_KEY')
+            foundry_endpoint = os.getenv('FOUNDRY_ENDPOINT', 'https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion')
             
-            project_client = AIProjectClient(
-                endpoint=myEndpoint,
-                credential=DefaultAzureCredential()
+            import openai
+            openai_client = openai.AsyncOpenAI(
+                api_key=foundry_api_key,
+                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai",
+                api_version="2024-10-21"
             )
-            
-            agent = project_client.agents.get(agent_name="FinanceCompanion")
-            openai_client = project_client.get_openai_client()
             
             # Add retry logic for rate limits
             import time
@@ -542,16 +546,17 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             
             for attempt in range(max_retries):
                 try:
-                    response = openai_client.chat.completions.create(
+                    response = await openai_client.chat.completions.create(
                         model="gpt-4o",
                         messages=[{"role": "user", "content": user_message}],
-                        extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
+                        temperature=0.7,
+                        max_tokens=2000
                     )
                     break
                 except Exception as e:
                     if "429" in str(e) and attempt < max_retries - 1:
                         logger.info(f"Rate limit hit, waiting {retry_delay} seconds before retry {attempt + 1}")
-                        time.sleep(retry_delay)
+                        await asyncio.sleep(retry_delay)
                         continue
                     else:
                         raise e
