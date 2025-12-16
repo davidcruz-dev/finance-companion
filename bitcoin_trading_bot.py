@@ -79,23 +79,32 @@ class BitcoinTradingBot:
             current_price = await self.get_current_btc_price()
             price_info = f"Current Bitcoin Price: ${current_price:,.2f}" if current_price else "Unable to fetch current price"
             
-            # Enhanced prompt with live price data
-            prompt = f"""Provide a complete Bitcoin educational market analysis using this LIVE price data:
+            # Enhanced prompt with current date and forward-looking analysis
+            prompt = f"""TODAY IS DECEMBER 16, 2025. Provide a Bitcoin market analysis for the CURRENT situation in December 2025 and forward outlook using this LIVE price data:
 
 {price_info}
 
-Use this exact price in your analysis. Create a comprehensive educational analysis including global liquidity, market correlations, seasonal patterns, and confluence factors.
+ANALYSIS REQUIREMENTS FOR DECEMBER 2025:
+1. Current market conditions as of December 16, 2025 (Q4 2025)
+2. Year-end 2025 positioning and dynamics 
+3. Forward outlook for 2026 and beyond
+4. Current global macro environment in late 2025
+5. How recent 2025 events are impacting Bitcoin now
 
-IMPORTANT FORMATTING REQUIREMENTS:
-- Use PLAIN TEXT format only - no markdown formatting like ** or __ 
-- Use simple emojis and clear spacing for readability
-- Do NOT include Fear & Greed Index data unless you have current accurate data
-- Focus on factual price action, liquidity analysis, and educational insights
-- Include global liquidity analysis with 3-6 month lag effects
+FORWARD-LOOKING ANALYSIS:
+- What trends from 2025 will continue into 2026?
+- Key events/catalysts to watch in 2026
+- Potential scenarios for Bitcoin in the coming months
+- Institutional adoption trends going forward
 
-Return a clean, readable message for Telegram without any markdown formatting.
+FORMATTING REQUIREMENTS:
+- Use PLAIN TEXT format only - no markdown formatting
+- Use simple emojis for readability  
+- DO NOT reference 2024 as current - we are in December 2025
+- Focus on CURRENT conditions and FUTURE outlook
+- Be specific about timeframes (Q1 2026, H1 2026, etc.)
 
-Focus on education, not trading advice. Include appropriate educational disclaimers."""
+Provide current analysis and forward-looking insights relevant to someone reading this on December 16, 2025."""
             
             # Add retry logic for rate limits
             import time
