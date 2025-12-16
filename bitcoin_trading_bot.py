@@ -376,40 +376,63 @@ DO NOT return JSON. Return only the formatted message text above."""
         try:
             # Scrape directly from CoinMarketCap charts page
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
             
             response = requests.get("https://coinmarketcap.com/charts/fear-and-greed-index/", 
-                                  headers=headers, timeout=10)
+                                  headers=headers, timeout=15)
             
             if response.status_code == 200:
                 import re
                 content = response.text
+                logger.info("Successfully fetched CMC Fear & Greed page")
                 
-                # Look for the Fear & Greed Index value in the page content
-                # Pattern to find the current value
-                value_pattern = r'"currentValue":(\d+)'
-                classification_pattern = r'"currentClassification":"([^"]+)"'
+                # Multiple patterns to find the current Fear & Greed value
+                patterns = [
+                    # Pattern 1: Look for the main display value (like "22" you see)
+                    r'CMC Crypto Fear and Greed Index[^<]*?(\d+)\s*([A-Za-z\s]+)',
+                    # Pattern 2: JSON-like data
+                    r'"currentValue"\s*:\s*(\d+)',
+                    r'"value"\s*:\s*(\d+)',
+                    # Pattern 3: HTML elements
+                    r'<[^>]*>\s*(\d+)\s*</[^>]*>\s*<[^>]*>\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))',
+                    # Pattern 4: Text-based
+                    r'(?:Index|Value)[\s\n]*(\d+)[\s\n]*((?:Extreme\s+)?(?:Fear|Greed|Neutral))',
+                    # Pattern 5: Simple number followed by classification
+                    r'(\d+)\s+((?:Extreme\s+)?(?:Fear|Greed|Neutral))'
+                ]
                 
-                value_match = re.search(value_pattern, content)
-                classification_match = re.search(classification_pattern, content)
+                for i, pattern in enumerate(patterns):
+                    matches = re.findall(pattern, content, re.IGNORECASE | re.DOTALL)
+                    if matches:
+                        logger.info(f"Pattern {i+1} found matches: {matches[:3]}")  # Log first 3 matches
+                        for match in matches:
+                            try:
+                                if isinstance(match, tuple) and len(match) >= 2:
+                                    value = int(match[0])
+                                    classification = match[1].strip()
+                                    # Validate reasonable range
+                                    if 0 <= value <= 100:
+                                        logger.info(f"Scraped Fear & Greed: {value} ({classification})")
+                                        return {"value": value, "classification": classification}
+                            except (ValueError, IndexError):
+                                continue
                 
-                if value_match and classification_match:
-                    value = int(value_match.group(1))
-                    classification = classification_match.group(1)
-                    logger.info(f"Scraped Fear & Greed: {value} ({classification})")
-                    return {"value": value, "classification": classification}
-                
-                # Alternative pattern - look for data in script tags
-                script_pattern = r'fear-and-greed.*?"value":(\d+).*?"classification":"([^"]+)"'
-                script_match = re.search(script_pattern, content, re.DOTALL)
-                
-                if script_match:
-                    value = int(script_match.group(1))
-                    classification = script_match.group(2)
-                    logger.info(f"Scraped Fear & Greed (alt): {value} ({classification})")
-                    return {"value": value, "classification": classification}
-                    
+                # Last resort: look for any two-digit number near "fear" or "greed"
+                fallback_pattern = r'(?:fear|greed).*?(\d{1,2}).*?((?:extreme\s+)?(?:fear|greed|neutral))|(\d{1,2}).*?(?:fear|greed)'
+                fallback_matches = re.findall(fallback_pattern, content, re.IGNORECASE | re.DOTALL)
+                if fallback_matches:
+                    logger.info(f"Fallback pattern matches: {fallback_matches[:3]}")
+                    for match in fallback_matches:
+                        try:
+                            value = int(match[0]) if match[0] else int(match[2])
+                            classification = match[1] if match[1] else "Unknown"
+                            if 0 <= value <= 100:
+                                logger.info(f"Scraped Fear & Greed (fallback): {value} ({classification})")
+                                return {"value": value, "classification": classification}
+                        except (ValueError, IndexError):
+                            continue
+                            
         except Exception as e:
             logger.error(f"Error scraping CMC Fear & Greed Index: {str(e)}")
         
