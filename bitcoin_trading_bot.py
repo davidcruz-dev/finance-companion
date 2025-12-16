@@ -9,6 +9,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import requests
 from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
+from azure.core.credentials import TokenCredential
 from azure.ai.projects import AIProjectClient
 from azure.core.credentials import AzureKeyCredential
 from azure.cognitiveservices.vision.computervision import ComputerVisionClient
@@ -53,10 +54,12 @@ class BitcoinTradingBot:
             # Use Azure AI Projects SDK
             myEndpoint = "https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion"
             
-            # Use DefaultAzureCredential since user is now logged in
+            # Use DefaultAzureCredential with AI services scope
+            credential = DefaultAzureCredential()
             project_client = AIProjectClient(
                 endpoint=myEndpoint,
-                credential=DefaultAzureCredential(),
+                credential=credential,
+                credential_scopes=["https://ai.azure.com/.default"]
             )
             
             myAgent = "FinanceCompanion"
@@ -210,6 +213,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             project_client = AIProjectClient(
                 endpoint=myEndpoint,
                 credential=DefaultAzureCredential(),
+                credential_scopes=["https://ai.azure.com/.default"]
             )
             
             agent = project_client.agents.get(agent_name="FinanceCompanion")
@@ -528,6 +532,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             project_client = AIProjectClient(
                 endpoint=myEndpoint,
                 credential=DefaultAzureCredential(),
+                credential_scopes=["https://ai.azure.com/.default"]
             )
             
             agent = project_client.agents.get(agent_name="FinanceCompanion")
