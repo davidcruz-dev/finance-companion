@@ -106,7 +106,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
                 try:
                     # Use direct chat completion with Azure deployment name
                     response = await openai_client.chat.completions.create(
-                        model="gpt-4o",  # This should be the deployment name in Azure
+                        model="gpt-4.1",  # This should be the deployment name in Azure
                         messages=[{"role": "user", "content": prompt}],
                         temperature=0.7,
                         max_tokens=2000
@@ -239,7 +239,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             for attempt in range(max_retries):
                 try:
                     response = await openai_client.chat.completions.create(
-                        model="gpt-4o",
+                        model="gpt-4.1",
                         messages=[{"role": "user", "content": enhanced_prompt}],
                         temperature=0.7,
                         max_tokens=2000
@@ -562,7 +562,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             for attempt in range(max_retries):
                 try:
                     response = await openai_client.chat.completions.create(
-                        model="gpt-4o",
+                        model="gpt-4.1",
                         messages=[{"role": "user", "content": user_message}],
                         temperature=0.7,
                         max_tokens=2000
