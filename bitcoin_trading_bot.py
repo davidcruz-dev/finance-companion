@@ -54,13 +54,20 @@ class BitcoinTradingBot:
             # Use Azure AI Projects SDK
             myEndpoint = "https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion"
             
-            # Use DefaultAzureCredential with AI services scope
-            credential = DefaultAzureCredential()
-            project_client = AIProjectClient(
-                endpoint=myEndpoint,
-                credential=credential,
-                credential_scopes=["https://ai.azure.com/.default"]
-            )
+            # Try using AzureKeyCredential with the API key from environment
+            foundry_api_key = os.getenv('FOUNDRY_API_KEY')
+            if foundry_api_key:
+                logger.info("Using FOUNDRY_API_KEY for authentication")
+                project_client = AIProjectClient(
+                    endpoint=myEndpoint,
+                    credential=AzureKeyCredential(foundry_api_key)
+                )
+            else:
+                logger.info("Using DefaultAzureCredential for authentication")
+                project_client = AIProjectClient(
+                    endpoint=myEndpoint,
+                    credential=DefaultAzureCredential()
+                )
             
             myAgent = "FinanceCompanion"
             agent = project_client.agents.get(agent_name=myAgent)
@@ -210,11 +217,17 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             # Query Foundry agent with screenshot data
             myEndpoint = "https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion"
             
-            project_client = AIProjectClient(
-                endpoint=myEndpoint,
-                credential=DefaultAzureCredential(),
-                credential_scopes=["https://ai.azure.com/.default"]
-            )
+            foundry_api_key = os.getenv('FOUNDRY_API_KEY')
+            if foundry_api_key:
+                project_client = AIProjectClient(
+                    endpoint=myEndpoint,
+                    credential=AzureKeyCredential(foundry_api_key)
+                )
+            else:
+                project_client = AIProjectClient(
+                    endpoint=myEndpoint,
+                    credential=DefaultAzureCredential()
+                )
             
             agent = project_client.agents.get(agent_name="FinanceCompanion")
             openai_client = project_client.get_openai_client()
@@ -529,11 +542,17 @@ Focus on education, not trading advice. Include appropriate educational disclaim
         try:
             myEndpoint = "https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion"
             
-            project_client = AIProjectClient(
-                endpoint=myEndpoint,
-                credential=DefaultAzureCredential(),
-                credential_scopes=["https://ai.azure.com/.default"]
-            )
+            foundry_api_key = os.getenv('FOUNDRY_API_KEY')
+            if foundry_api_key:
+                project_client = AIProjectClient(
+                    endpoint=myEndpoint,
+                    credential=AzureKeyCredential(foundry_api_key)
+                )
+            else:
+                project_client = AIProjectClient(
+                    endpoint=myEndpoint,
+                    credential=DefaultAzureCredential()
+                )
             
             agent = project_client.agents.get(agent_name="FinanceCompanion")
             openai_client = project_client.get_openai_client()
