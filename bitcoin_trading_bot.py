@@ -85,10 +85,10 @@ class BitcoinTradingBot:
             
             for attempt in range(max_retries):
                 try:
-                    # Let foundry agent execute its built-in instructions without any prompt
+                    # Trigger foundry agent's built-in Bitcoin analysis instructions
                     response = await openai_client.chat.completions.create(
                         model="gpt-4.1",
-                        messages=[{"role": "user", "content": ""}],  # Empty message to trigger built-in instructions
+                        messages=[{"role": "user", "content": "Bitcoin analysis"}],  # Minimal trigger for built-in instructions
                         temperature=0.7,
                         max_tokens=2000
                     )
