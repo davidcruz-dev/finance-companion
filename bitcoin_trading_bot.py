@@ -64,8 +64,7 @@ class BitcoinTradingBot:
             import openai
             openai_client = openai.AsyncOpenAI(
                 api_key=foundry_api_key,
-                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai",
-                api_version="2024-10-21"
+                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai"
             )
             
             # Get current Bitcoin price locally (since Foundry can't access live APIs reliably)
@@ -216,8 +215,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             import openai
             openai_client = openai.AsyncOpenAI(
                 api_key=foundry_api_key,
-                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai",
-                api_version="2024-10-21"
+                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai"
             )
             
             # Add retry logic for rate limits
@@ -535,8 +533,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             import openai
             openai_client = openai.AsyncOpenAI(
                 api_key=foundry_api_key,
-                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai",
-                api_version="2024-10-21"
+                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai"
             )
             
             # Add retry logic for rate limits
