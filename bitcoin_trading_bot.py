@@ -94,8 +94,9 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             
             for attempt in range(max_retries):
                 try:
-                    response = openai_client.responses.create(
-                        input=[{"role": "user", "content": prompt}],
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[{"role": "user", "content": prompt}],
                         extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
                     )
                     break  # Success, exit retry loop
@@ -112,7 +113,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             logger.info(f"Response attributes: {dir(response)}")
             
             # Try to parse JSON response
-            response_text = response.output_text
+            response_text = response.choices[0].message.content
             logger.info(f"Response text preview: {response_text[:200] if response_text else 'None'}")
             
             # If it's already structured, return it
@@ -221,8 +222,9 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             
             for attempt in range(max_retries):
                 try:
-                    response = openai_client.responses.create(
-                        input=[{"role": "user", "content": enhanced_prompt}],
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[{"role": "user", "content": enhanced_prompt}],
                         extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
                     )
                     break
@@ -237,7 +239,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             return {
                 "screenshot_analysis": {
                     "extracted_text": full_text,
-                    "agent_response": response.output_text,
+                    "agent_response": response.choices[0].message.content,
                     "timestamp": datetime.now().isoformat()
                 }
             }
@@ -281,9 +283,9 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             if isinstance(analysis_data, str):
                 return analysis_data
             
-            # Check if it's a response object with output_text
-            if hasattr(analysis_data, 'output_text'):
-                return analysis_data.output_text
+            # Check if it's a response object with choices
+            if hasattr(analysis_data, 'choices'):
+                return analysis_data.choices[0].message.content
                 
             # If it's a dict, look for the reasoning text in the nested structure
             if isinstance(analysis_data, dict):
@@ -538,8 +540,9 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             
             for attempt in range(max_retries):
                 try:
-                    response = openai_client.responses.create(
-                        input=[{"role": "user", "content": user_message}],
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[{"role": "user", "content": user_message}],
                         extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
                     )
                     break
@@ -552,7 +555,7 @@ Focus on education, not trading advice. Include appropriate educational disclaim
                         raise e
             
             # Send response back to user
-            agent_response = response.output_text
+            agent_response = response.choices[0].message.content
             # Split long messages if needed
             if len(agent_response) > 4000:
                 chunks = [agent_response[i:i+4000] for i in range(0, len(agent_response), 4000)]
