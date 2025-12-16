@@ -387,33 +387,46 @@ DO NOT return JSON. Return only the formatted message text above."""
                 content = response.text
                 logger.info("Successfully fetched CMC Fear & Greed page")
                 
-                # Multiple patterns to find the current Fear & Greed value
+                # Try to find the specific current value display section
+                # Look for the pattern where it shows the current number prominently
                 patterns = [
-                    # Pattern 1: Look for the main display value (like "22" you see)
-                    r'CMC Crypto Fear and Greed Index[^<]*?(\d+)\s*([A-Za-z\s]+)',
-                    # Pattern 2: JSON-like data
-                    r'"currentValue"\s*:\s*(\d+)',
-                    r'"value"\s*:\s*(\d+)',
-                    # Pattern 3: HTML elements
-                    r'<[^>]*>\s*(\d+)\s*</[^>]*>\s*<[^>]*>\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))',
-                    # Pattern 4: Text-based
-                    r'(?:Index|Value)[\s\n]*(\d+)[\s\n]*((?:Extreme\s+)?(?:Fear|Greed|Neutral))',
-                    # Pattern 5: Simple number followed by classification
-                    r'(\d+)\s+((?:Extreme\s+)?(?:Fear|Greed|Neutral))'
+                    # Pattern 1: Main display - number immediately followed by classification
+                    r'(?:CMC Crypto Fear and Greed Index|Fear and Greed Index)\s*[\s\S]*?(\d{1,2})\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))(?!\s*-\s*\d)',
+                    # Pattern 2: Direct number-classification pair (current value)
+                    r'(\d{1,2})\s+((?:Extreme\s+)?(?:Fear|Greed|Neutral))(?!\s*-\s*\d+)',
+                    # Pattern 3: JSON-style current value
+                    r'"(?:current|today)(?:Value|Index)?"\s*:\s*(\d+)',
+                    # Pattern 4: Main index display section
+                    r'<div[^>]*(?:current|index|main)[^>]*>\s*(\d+)\s*</div>\s*<div[^>]*>\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))',
+                    # Pattern 5: Text node with current value
+                    r'(?:Current|Today).*?(\d{1,2})\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))'
                 ]
                 
+                # First, try to find the exact section with "22 Fear" pattern from your example
+                # Look for the main current index display
+                main_pattern = r'CMC Crypto Fear and Greed Index\s*[\s\S]*?(\d{1,2})\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))(?=\s*Historical Values)'
+                main_match = re.search(main_pattern, content, re.IGNORECASE | re.DOTALL)
+                
+                if main_match:
+                    value = int(main_match.group(1))
+                    classification = main_match.group(2).strip()
+                    logger.info(f"Found main display Fear & Greed: {value} ({classification})")
+                    return {"value": value, "classification": classification}
+                
+                # If that doesn't work, try other patterns but prioritize first match
                 for i, pattern in enumerate(patterns):
                     matches = re.findall(pattern, content, re.IGNORECASE | re.DOTALL)
                     if matches:
-                        logger.info(f"Pattern {i+1} found matches: {matches[:3]}")  # Log first 3 matches
-                        for match in matches:
+                        logger.info(f"Pattern {i+1} found matches: {matches[:5]}")  # Log first 5 matches
+                        # Try the first valid match (often the current/main value)
+                        for j, match in enumerate(matches):
                             try:
                                 if isinstance(match, tuple) and len(match) >= 2:
                                     value = int(match[0])
                                     classification = match[1].strip()
                                     # Validate reasonable range
                                     if 0 <= value <= 100:
-                                        logger.info(f"Scraped Fear & Greed: {value} ({classification})")
+                                        logger.info(f"Using match {j+1}: {value} ({classification})")
                                         return {"value": value, "classification": classification}
                             except (ValueError, IndexError):
                                 continue
