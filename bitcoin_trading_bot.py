@@ -93,8 +93,12 @@ class BitcoinTradingBot:
             if liquidity_data.get('us_m2'):
                 m2_data = liquidity_data['us_m2'] 
                 liquidity_text += f"- US M2 Money Supply: {m2_data.get('value', 'N/A')} (Date: {m2_data.get('date', 'N/A')})\n"
-            if liquidity_data.get('usd_strength'):
-                liquidity_text += f"- USD Strength (EUR rate): {liquidity_data['usd_strength']}\n"
+            if liquidity_data.get('dxy'):
+                dxy_data = liquidity_data['dxy']
+                liquidity_text += f"- DXY (Dollar Index): {dxy_data.get('value', 'N/A')} ({dxy_data.get('source', 'N/A')})\n"
+            elif liquidity_data.get('usd_strength'):
+                usd_data = liquidity_data['usd_strength']
+                liquidity_text += f"- USD Strength: {usd_data.get('value', 'N/A')} ({usd_data.get('source', 'USD/EUR rate')})\n"
                 
             if not any(liquidity_data.values()):
                 liquidity_text += "- Unable to fetch current liquidity data\n"
@@ -137,7 +141,7 @@ Return ONLY the formatted Telegram message text (markdown), ready to send direct
 💰 **Current Price: {live_price}**
 
 💧 **Global Liquidity Analysis:**
-Use the provided liquidity data to analyze current conditions. Include Fed Balance Sheet trends, M2 data, and USD strength.
+Use the provided liquidity data to analyze current conditions. Include Fed Balance Sheet trends, M2 data, DXY analysis, and USD strength effects on Bitcoin.
 
 📈 **Market Overview:**
 Current Phase: [Analyze based on price level and liquidity conditions] - [Educational explanation]
@@ -452,15 +456,37 @@ DO NOT return JSON. Return only the formatted message text above."""
             logger.error(f"Error fetching Fed data: {str(e)}")
         
         try:
-            # DXY (Dollar Index) from Alpha Vantage free tier
-            # This gives us USD strength which affects global liquidity
-            dxy_response = requests.get("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=EUR&apikey=demo", timeout=5)
+            # Try to get DXY (Dollar Index) data from multiple sources
+            # First try Yahoo Finance for DXY
+            dxy_response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB", timeout=5)
             if dxy_response.status_code == 200:
                 dxy_data = dxy_response.json()
-                if dxy_data.get('Realtime Currency Exchange Rate'):
-                    liquidity_data['usd_strength'] = dxy_data['Realtime Currency Exchange Rate'].get('5. Exchange Rate')
+                if dxy_data.get('chart') and dxy_data['chart'].get('result'):
+                    result = dxy_data['chart']['result'][0]
+                    if result.get('meta') and result['meta'].get('regularMarketPrice'):
+                        dxy_price = result['meta']['regularMarketPrice']
+                        liquidity_data['dxy'] = {
+                            'value': round(dxy_price, 2),
+                            'source': 'Yahoo Finance'
+                        }
+                        logger.info(f"DXY from Yahoo: {dxy_price}")
         except Exception as e:
-            logger.error(f"Error fetching USD strength data: {str(e)}")
+            logger.error(f"Error fetching DXY from Yahoo: {str(e)}")
+            
+        # Fallback: USD strength via EUR/USD rate
+        if 'dxy' not in liquidity_data:
+            try:
+                usd_eur_response = requests.get("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=EUR&apikey=demo", timeout=5)
+                if usd_eur_response.status_code == 200:
+                    usd_eur_data = usd_eur_response.json()
+                    if usd_eur_data.get('Realtime Currency Exchange Rate'):
+                        usd_eur_rate = usd_eur_data['Realtime Currency Exchange Rate'].get('5. Exchange Rate')
+                        liquidity_data['usd_strength'] = {
+                            'value': usd_eur_rate,
+                            'source': 'USD/EUR rate'
+                        }
+            except Exception as e:
+                logger.error(f"Error fetching USD/EUR data: {str(e)}")
             
         try:
             # Global M2 Money Supply approximation using economic indicators
