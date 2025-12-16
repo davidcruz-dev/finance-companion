@@ -75,8 +75,20 @@ class BitcoinTradingBot:
                 azure_endpoint=base_domain
             )
             
-            # Comprehensive Bitcoin analysis prompt with live data fetching instructions
-            prompt = """You are a complete Bitcoin educational analysis agent that creates ready-to-send Telegram messages.
+            # Get current date and Bitcoin price for the analysis
+            from datetime import datetime
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            current_price = await self.get_current_btc_price()
+            live_price = f"${current_price:,.2f}" if current_price else "Unable to fetch live price"
+            
+            # Comprehensive Bitcoin analysis prompt with real live data
+            prompt = f"""IMPORTANT: TODAY IS {current_date}. You are a complete Bitcoin educational analysis agent.
+
+LIVE DATA PROVIDED:
+- Current Bitcoin Price: {live_price}
+- Current Date: {current_date}
+
+Use this REAL data in your analysis. Do not fetch additional data - use what is provided above.
 
 ## Your Tasks:
 1. CRITICAL: You MUST fetch the current Bitcoin price from this exact API call:
@@ -114,9 +126,9 @@ and you should indicate "Unable to fetch live price" instead of showing wrong da
 Return ONLY the formatted Telegram message text (markdown), ready to send directly:
 
 📊 **Bitcoin Market Analysis**
-⏰ [Current timestamp]
+⏰ {current_date} (Current Date)
 
-💰 **Current Price: $[LIVE BTC PRICE FROM API]**
+💰 **Current Price: {live_price}**
 
 💧 **Global Liquidity Analysis:**
 • Current Liquidity Status: [Expanding/Contracting/Neutral]
