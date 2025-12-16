@@ -374,84 +374,10 @@ DO NOT return JSON. Return only the formatted message text above."""
     async def get_fear_greed_index(self):
         """Get current Fear & Greed Index by scraping CoinMarketCap"""
         try:
-            # Scrape directly from CoinMarketCap charts page
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-            
-            response = requests.get("https://coinmarketcap.com/charts/fear-and-greed-index/", 
-                                  headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                import re
-                content = response.text
-                logger.info("Successfully fetched CMC Fear & Greed page")
-                
-                # Try to find the specific current value display section
-                # Look for the pattern where it shows the current number prominently
-                patterns = [
-                    # Pattern 1: Main display - number immediately followed by classification
-                    r'(?:CMC Crypto Fear and Greed Index|Fear and Greed Index)\s*[\s\S]*?(\d{1,2})\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))(?!\s*-\s*\d)',
-                    # Pattern 2: Direct number-classification pair (current value)
-                    r'(\d{1,2})\s+((?:Extreme\s+)?(?:Fear|Greed|Neutral))(?!\s*-\s*\d+)',
-                    # Pattern 3: JSON-style current value
-                    r'"(?:current|today)(?:Value|Index)?"\s*:\s*(\d+)',
-                    # Pattern 4: Main index display section
-                    r'<div[^>]*(?:current|index|main)[^>]*>\s*(\d+)\s*</div>\s*<div[^>]*>\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))',
-                    # Pattern 5: Text node with current value
-                    r'(?:Current|Today).*?(\d{1,2})\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))'
-                ]
-                
-                # First, try to find the exact section with "22 Fear" pattern from your example
-                # Look for the main current index display
-                main_pattern = r'CMC Crypto Fear and Greed Index\s*[\s\S]*?(\d{1,2})\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))(?=\s*Historical Values)'
-                main_match = re.search(main_pattern, content, re.IGNORECASE | re.DOTALL)
-                
-                if main_match:
-                    value = int(main_match.group(1))
-                    classification = main_match.group(2).strip()
-                    logger.info(f"Found main display Fear & Greed: {value} ({classification})")
-                    return {"value": value, "classification": classification}
-                
-                # If that doesn't work, try other patterns but prioritize first match
-                for i, pattern in enumerate(patterns):
-                    matches = re.findall(pattern, content, re.IGNORECASE | re.DOTALL)
-                    if matches:
-                        logger.info(f"Pattern {i+1} found matches: {matches[:5]}")  # Log first 5 matches
-                        # Try the first valid match (often the current/main value)
-                        for j, match in enumerate(matches):
-                            try:
-                                if isinstance(match, tuple) and len(match) >= 2:
-                                    value = int(match[0])
-                                    classification = match[1].strip()
-                                    # Validate reasonable range
-                                    if 0 <= value <= 100:
-                                        logger.info(f"Using match {j+1}: {value} ({classification})")
-                                        return {"value": value, "classification": classification}
-                            except (ValueError, IndexError):
-                                continue
-                
-                # Last resort: look for any two-digit number near "fear" or "greed"
-                fallback_pattern = r'(?:fear|greed).*?(\d{1,2}).*?((?:extreme\s+)?(?:fear|greed|neutral))|(\d{1,2}).*?(?:fear|greed)'
-                fallback_matches = re.findall(fallback_pattern, content, re.IGNORECASE | re.DOTALL)
-                if fallback_matches:
-                    logger.info(f"Fallback pattern matches: {fallback_matches[:3]}")
-                    for match in fallback_matches:
-                        try:
-                            value = int(match[0]) if match[0] else int(match[2])
-                            classification = match[1] if match[1] else "Unknown"
-                            if 0 <= value <= 100:
-                                logger.info(f"Scraped Fear & Greed (fallback): {value} ({classification})")
-                                return {"value": value, "classification": classification}
-                        except (ValueError, IndexError):
-                            continue
-                            
-        except Exception as e:
-            logger.error(f"Error scraping CMC Fear & Greed Index: {str(e)}")
-        
-        try:
-            # Fallback to Alternative.me API
-            response = requests.get("https://api.alternative.me/fng/", timeout=5)
+            # Since regex scraping isn't getting the exact current value,
+            # let's try a simpler approach - just use Alternative.me API
+            # which is more reliable than trying to parse dynamic CMC page
+            response = requests.get("https://api.alternative.me/fng/", timeout=10)
             if response.status_code == 200:
                 data = response.json()
                 if data.get('data') and len(data['data']) > 0:
@@ -463,6 +389,47 @@ DO NOT return JSON. Return only the formatted message text above."""
         except Exception as e:
             logger.error(f"Error fetching Alternative.me Fear & Greed Index: {str(e)}")
             
+        # If Alternative.me fails, try a different approach with CMC
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive',
+            }
+            
+            # Try to get CMC Fear & Greed data - but acknowledge it might be JS-loaded
+            response = requests.get("https://coinmarketcap.com/charts/fear-and-greed-index/", 
+                                  headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                content = response.text
+                logger.info("CMC page fetched, but may contain JS-loaded content")
+                
+                # Try very simple pattern matching for current value
+                import re
+                # Look for the most basic pattern: number followed by fear/greed
+                simple_pattern = r'(?:^|\s)(\d{1,2})\s*((?:Extreme\s+)?(?:Fear|Greed|Neutral))(?:\s|$)'
+                matches = re.findall(simple_pattern, content, re.IGNORECASE | re.MULTILINE)
+                
+                if matches:
+                    # Take the first reasonable match
+                    for match in matches:
+                        try:
+                            value = int(match[0])
+                            classification = match[1].strip()
+                            if 0 <= value <= 100:
+                                logger.info(f"CMC simple pattern: {value} ({classification})")
+                                return {"value": value, "classification": classification}
+                        except (ValueError, IndexError):
+                            continue
+                            
+        except Exception as e:
+            logger.error(f"Error with CMC backup: {str(e)}")
+            
+        # Final fallback - return a reasonable default if we can't get data
+        logger.warning("Could not fetch Fear & Greed Index from any source")
         return None
 
     async def get_liquidity_data(self):
