@@ -79,32 +79,48 @@ class BitcoinTradingBot:
             current_price = await self.get_current_btc_price()
             price_info = f"Current Bitcoin Price: ${current_price:,.2f}" if current_price else "Unable to fetch current price"
             
-            # Enhanced prompt with current date and forward-looking analysis
-            prompt = f"""TODAY IS DECEMBER 16, 2025. Provide a Bitcoin market analysis for the CURRENT situation in December 2025 and forward outlook using this LIVE price data:
+            # Get current date and time for fresh analysis
+            from datetime import datetime, timezone
+            current_date = datetime.now(timezone.utc)
+            current_year = current_date.year
+            current_month = current_date.month
+            current_day = current_date.day
+            
+            # Determine quarter and season
+            quarter = f"Q{(current_month-1)//3 + 1}"
+            month_name = current_date.strftime("%B")
+            
+            # Create dynamic, fresh analysis prompt
+            prompt = f"""TODAY IS {month_name} {current_day}, {current_year}. You are providing a FRESH Bitcoin market analysis for someone reading this RIGHT NOW. Use this LIVE price data:
 
 {price_info}
 
-ANALYSIS REQUIREMENTS FOR DECEMBER 2025:
-1. Current market conditions as of December 16, 2025 (Q4 2025)
-2. Year-end 2025 positioning and dynamics 
-3. Forward outlook for 2026 and beyond
-4. Current global macro environment in late 2025
-5. How recent 2025 events are impacting Bitcoin now
+CURRENT CONTEXT ({month_name} {current_year}, {quarter}):
+Provide a completely fresh, up-to-date analysis that considers:
 
-FORWARD-LOOKING ANALYSIS:
-- What trends from 2025 will continue into 2026?
-- Key events/catalysts to watch in 2026
-- Potential scenarios for Bitcoin in the coming months
-- Institutional adoption trends going forward
+1. IMMEDIATE MARKET CONDITIONS (as of {month_name} {current_day}, {current_year})
+   - Current price action and momentum
+   - Recent market events from the past few days/weeks
+   - Current {quarter} {current_year} market dynamics
 
-FORMATTING REQUIREMENTS:
-- Use PLAIN TEXT format only - no markdown formatting
-- Use simple emojis for readability  
-- DO NOT reference 2024 as current - we are in December 2025
-- Focus on CURRENT conditions and FUTURE outlook
-- Be specific about timeframes (Q1 2026, H1 2026, etc.)
+2. REAL-TIME MACRO ENVIRONMENT
+   - Global economic conditions RIGHT NOW
+   - Central bank policies currently in effect
+   - Current geopolitical factors affecting markets
 
-Provide current analysis and forward-looking insights relevant to someone reading this on December 16, 2025."""
+3. FORWARD-LOOKING ANALYSIS
+   - Next quarter outlook (what's coming in the next 3 months)
+   - Key upcoming events and catalysts
+   - Potential scenarios for the coming weeks/months
+
+REQUIREMENTS:
+- Provide analysis as if you're a market expert giving fresh insights TODAY
+- Reference current market conditions, not historical data from months ago
+- Include forward-looking perspective for upcoming periods
+- Use plain text, simple emojis, no markdown
+- Focus on what's happening NOW and what's coming NEXT
+
+Give me a fresh, current analysis someone would want to read on {month_name} {current_day}, {current_year}."""
             
             # Add retry logic for rate limits
             import time
