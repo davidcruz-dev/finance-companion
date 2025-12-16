@@ -75,8 +75,91 @@ class BitcoinTradingBot:
                 azure_endpoint=base_domain
             )
             
-            # Let the foundry agent use its built-in instructions automatically
-            # No prompt needed - the agent has comprehensive instructions to fetch live data and analyze
+            # Comprehensive Bitcoin analysis prompt with live data fetching instructions
+            prompt = """You are a complete Bitcoin educational analysis agent that creates ready-to-send Telegram messages.
+
+## Your Tasks:
+1. CRITICAL: You MUST fetch the current Bitcoin price from this exact API call:
+https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd
+
+Before starting analysis, make the API call and use the LIVE price returned. Do not use any cached,
+historical, or estimated prices.
+
+Current Bitcoin price is approximately $95,000+ so if you get a price around $40,000, your API call failed
+and you should indicate "Unable to fetch live price" instead of showing wrong data.
+
+2. FETCH GLOBAL LIQUIDITY DATA from these sources:
+- Federal Reserve Balance Sheet (QT/QE status)
+- ECB Balance Sheet
+- Bank of Japan Balance Sheet
+- People's Bank of China Balance Sheet
+- Global Central Bank Liquidity aggregate
+- M2 Money Supply trends (US, EU, China)
+- Global liquidity conditions index
+
+3. Perform comprehensive educational market analysis including liquidity lag analysis
+4. Return a complete, formatted Telegram message (NOT JSON)
+
+## Analysis Should Include:
+- Live Bitcoin price
+- Global liquidity conditions and trends
+- Bitcoin's typical 3-6 month lag to liquidity changes
+- Fear & Greed Index with educational context
+- Confluence factor breakdown (rate 1-8, adding liquidity factor)
+- Market phase education
+- Key price levels with historical context
+- Educational insights and key learnings
+
+## Output Format:
+Return ONLY the formatted Telegram message text (markdown), ready to send directly:
+
+📊 **Bitcoin Market Analysis**
+⏰ [Current timestamp]
+
+💰 **Current Price: $[LIVE BTC PRICE FROM API]**
+
+💧 **Global Liquidity Analysis:**
+• Current Liquidity Status: [Expanding/Contracting/Neutral]
+• Fed Balance Sheet: [QE/QT status and trend]
+• Global Central Bank Trend: [Coordinated expansion/contraction]
+• Bitcoin Lag Indicator: [What liquidity was doing 3-6 months ago vs now]
+• Educational Note: [How current liquidity should affect BTC in coming months]
+
+📈 **Market Overview:**
+Current Phase: [Phase] - [Educational explanation including liquidity context]
+
+😱 **Fear & Greed Index: [X] ([Classification])**
+• [Educational insight about what this level means historically]
+
+🎯 **Confluence Analysis:**
+• Bullish Signals: [X]/8
+• Bearish Signals: [X]/8
+• Analysis Confidence: [X]/10
+
+**Factor Breakdown:**
+• Global Liquidity: [Score]/8 - [Current liquidity trends and Bitcoin's typical lag response]
+• Seasonal: [Score]/8 - [Educational explanation]
+• Macro: [Score]/8 - [Educational explanation]
+• Correlations: [Score]/8 - [Educational explanation]
+• Institutional: [Score]/8 - [Educational explanation]
+• Technical: [Score]/8 - [Educational explanation]
+• Sentiment: [Score]/8 - [Educational explanation]
+• Risk Environment: [Score]/8 - [Educational explanation]
+
+📊 **Important Price Levels:**
+🎯 Key Level: [Price and why it matters]
+🛡️ Risk Level: [Price and educational context]
+🏆 Target Zone: [Price and historical context]
+
+📚 **Key Educational Insights:**
+[3-4 main learning points about current market conditions, including liquidity lag effects]
+
+💧 **Liquidity Lag Education:**
+[Explain what global liquidity was doing 3-6 months ago and how it might affect Bitcoin now/soon]
+
+⚠️ *This is educational analysis only, not financial advice*
+
+DO NOT return JSON. Return only the formatted message text above."""
             
             # Add retry logic for rate limits
             import time
@@ -85,10 +168,10 @@ class BitcoinTradingBot:
             
             for attempt in range(max_retries):
                 try:
-                    # Trigger foundry agent's built-in Bitcoin analysis instructions
+                    # Use comprehensive Bitcoin analysis prompt
                     response = await openai_client.chat.completions.create(
                         model="gpt-4.1",
-                        messages=[{"role": "user", "content": "Bitcoin analysis"}],  # Minimal trigger for built-in instructions
+                        messages=[{"role": "user", "content": prompt}],
                         temperature=0.7,
                         max_tokens=2000
                     )
