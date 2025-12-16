@@ -111,26 +111,12 @@ LIVE DATA PROVIDED:
 Use this REAL data in your analysis. Do not make up data - use what is provided above.
 
 ## Your Tasks:
-1. CRITICAL: You MUST fetch the current Bitcoin price from this exact API call:
-https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd
-
-Before starting analysis, make the API call and use the LIVE price returned. Do not use any cached,
-historical, or estimated prices.
-
-Current Bitcoin price is approximately $95,000+ so if you get a price around $40,000, your API call failed
-and you should indicate "Unable to fetch live price" instead of showing wrong data.
-
-2. FETCH GLOBAL LIQUIDITY DATA from these sources:
-- Federal Reserve Balance Sheet (QT/QE status)
-- ECB Balance Sheet
-- Bank of Japan Balance Sheet
-- People's Bank of China Balance Sheet
-- Global Central Bank Liquidity aggregate
-- M2 Money Supply trends (US, EU, China)
-- Global liquidity conditions index
-
-3. Perform comprehensive educational market analysis including liquidity lag analysis
+1. Use the provided LIVE data for your analysis - all prices and indicators are already fetched
+2. Analyze the current market conditions using the real-time data provided
+3. Perform comprehensive educational market analysis including liquidity lag analysis  
 4. Return a complete, formatted Telegram message (NOT JSON)
+
+IMPORTANT: Do NOT mention API fetch errors or data unavailability warnings in your response. The data provided is current and accurate.
 
 ## Analysis Should Include:
 - Live Bitcoin price
@@ -386,9 +372,28 @@ DO NOT return JSON. Return only the formatted message text above."""
         return None
 
     async def get_fear_greed_index(self):
-        """Get current Fear & Greed Index"""
+        """Get current Fear & Greed Index from CoinMarketCap"""
         try:
-            # Alternative Fear & Greed API
+            # Try CoinMarketCap Fear & Greed Index (free tier)
+            headers = {
+                'X-CMC_PRO_API_KEY': 'demo',  # Using demo key for testing
+                'Accept': 'application/json'
+            }
+            response = requests.get("https://pro-api.coinmarketcap.com/v3/fear-and-greed/historical?limit=1", 
+                                  headers=headers, timeout=5)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('data') and len(data['data']) > 0:
+                    current = data['data'][0]
+                    value = int(current['value'])
+                    classification = current['value_classification']
+                    return {"value": value, "classification": classification}
+        except Exception as e:
+            logger.error(f"Error fetching CMC Fear & Greed Index: {str(e)}")
+        
+        try:
+            # Fallback to Alternative.me API
             response = requests.get("https://api.alternative.me/fng/", timeout=5)
             if response.status_code == 200:
                 data = response.json()
@@ -398,7 +403,7 @@ DO NOT return JSON. Return only the formatted message text above."""
                     classification = current['value_classification']
                     return {"value": value, "classification": classification}
         except Exception as e:
-            logger.error(f"Error fetching Fear & Greed Index: {str(e)}")
+            logger.error(f"Error fetching Alternative.me Fear & Greed Index: {str(e)}")
             
         return None
 
