@@ -372,25 +372,46 @@ DO NOT return JSON. Return only the formatted message text above."""
         return None
 
     async def get_fear_greed_index(self):
-        """Get current Fear & Greed Index from CoinMarketCap"""
+        """Get current Fear & Greed Index by scraping CoinMarketCap"""
         try:
-            # Try CoinMarketCap Fear & Greed Index (free tier)
+            # Scrape directly from CoinMarketCap charts page
             headers = {
-                'X-CMC_PRO_API_KEY': 'demo',  # Using demo key for testing
-                'Accept': 'application/json'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
-            response = requests.get("https://pro-api.coinmarketcap.com/v3/fear-and-greed/historical?limit=1", 
-                                  headers=headers, timeout=5)
+            
+            response = requests.get("https://coinmarketcap.com/charts/fear-and-greed-index/", 
+                                  headers=headers, timeout=10)
             
             if response.status_code == 200:
-                data = response.json()
-                if data.get('data') and len(data['data']) > 0:
-                    current = data['data'][0]
-                    value = int(current['value'])
-                    classification = current['value_classification']
+                import re
+                content = response.text
+                
+                # Look for the Fear & Greed Index value in the page content
+                # Pattern to find the current value
+                value_pattern = r'"currentValue":(\d+)'
+                classification_pattern = r'"currentClassification":"([^"]+)"'
+                
+                value_match = re.search(value_pattern, content)
+                classification_match = re.search(classification_pattern, content)
+                
+                if value_match and classification_match:
+                    value = int(value_match.group(1))
+                    classification = classification_match.group(1)
+                    logger.info(f"Scraped Fear & Greed: {value} ({classification})")
                     return {"value": value, "classification": classification}
+                
+                # Alternative pattern - look for data in script tags
+                script_pattern = r'fear-and-greed.*?"value":(\d+).*?"classification":"([^"]+)"'
+                script_match = re.search(script_pattern, content, re.DOTALL)
+                
+                if script_match:
+                    value = int(script_match.group(1))
+                    classification = script_match.group(2)
+                    logger.info(f"Scraped Fear & Greed (alt): {value} ({classification})")
+                    return {"value": value, "classification": classification}
+                    
         except Exception as e:
-            logger.error(f"Error fetching CMC Fear & Greed Index: {str(e)}")
+            logger.error(f"Error scraping CMC Fear & Greed Index: {str(e)}")
         
         try:
             # Fallback to Alternative.me API
@@ -401,6 +422,7 @@ DO NOT return JSON. Return only the formatted message text above."""
                     current = data['data'][0]
                     value = int(current['value'])
                     classification = current['value_classification']
+                    logger.info(f"Alternative.me Fear & Greed: {value} ({classification})")
                     return {"value": value, "classification": classification}
         except Exception as e:
             logger.error(f"Error fetching Alternative.me Fear & Greed Index: {str(e)}")
