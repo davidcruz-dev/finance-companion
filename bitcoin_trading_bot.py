@@ -75,11 +75,29 @@ class BitcoinTradingBot:
                 azure_endpoint=base_domain
             )
             
-            # Get current date and Bitcoin price for the analysis
+            # Get current date and all live data for the analysis
             from datetime import datetime
             current_date = datetime.now().strftime("%Y-%m-%d")
             current_price = await self.get_current_btc_price()
+            fear_greed = await self.get_fear_greed_index()
+            liquidity_data = await self.get_liquidity_data()
+            
             live_price = f"${current_price:,.2f}" if current_price else "Unable to fetch live price"
+            fear_greed_text = f"{fear_greed['value']} ({fear_greed['classification']})" if fear_greed else "Data unavailable"
+            
+            # Format liquidity data for prompt
+            liquidity_text = "Liquidity data:\n"
+            if liquidity_data.get('fed_balance_sheet'):
+                fed_data = liquidity_data['fed_balance_sheet']
+                liquidity_text += f"- Fed Balance Sheet: {fed_data.get('value', 'N/A')} (Date: {fed_data.get('date', 'N/A')})\n"
+            if liquidity_data.get('us_m2'):
+                m2_data = liquidity_data['us_m2'] 
+                liquidity_text += f"- US M2 Money Supply: {m2_data.get('value', 'N/A')} (Date: {m2_data.get('date', 'N/A')})\n"
+            if liquidity_data.get('usd_strength'):
+                liquidity_text += f"- USD Strength (EUR rate): {liquidity_data['usd_strength']}\n"
+                
+            if not any(liquidity_data.values()):
+                liquidity_text += "- Unable to fetch current liquidity data\n"
             
             # Comprehensive Bitcoin analysis prompt with real live data
             prompt = f"""IMPORTANT: TODAY IS {current_date}. You are a complete Bitcoin educational analysis agent.
@@ -87,8 +105,10 @@ class BitcoinTradingBot:
 LIVE DATA PROVIDED:
 - Current Bitcoin Price: {live_price}
 - Current Date: {current_date}
+- Fear & Greed Index: {fear_greed_text}
+{liquidity_text}
 
-Use this REAL data in your analysis. Do not fetch additional data - use what is provided above.
+Use this REAL data in your analysis. Do not make up data - use what is provided above.
 
 ## Your Tasks:
 1. CRITICAL: You MUST fetch the current Bitcoin price from this exact API call:
@@ -131,16 +151,12 @@ Return ONLY the formatted Telegram message text (markdown), ready to send direct
 💰 **Current Price: {live_price}**
 
 💧 **Global Liquidity Analysis:**
-• Current Liquidity Status: [Expanding/Contracting/Neutral]
-• Fed Balance Sheet: [QE/QT status and trend]
-• Global Central Bank Trend: [Coordinated expansion/contraction]
-• Bitcoin Lag Indicator: [What liquidity was doing 3-6 months ago vs now]
-• Educational Note: [How current liquidity should affect BTC in coming months]
+Use the provided liquidity data to analyze current conditions. Include Fed Balance Sheet trends, M2 data, and USD strength.
 
 📈 **Market Overview:**
-Current Phase: [Phase] - [Educational explanation including liquidity context]
+Current Phase: [Analyze based on price level and liquidity conditions] - [Educational explanation]
 
-😱 **Fear & Greed Index: [X] ([Classification])**
+😱 **Fear & Greed Index: {fear_greed_text}**
 • [Educational insight about what this level means historically]
 
 🎯 **Confluence Analysis:**
@@ -368,6 +384,70 @@ DO NOT return JSON. Return only the formatted message text above."""
             pass
             
         return None
+
+    async def get_fear_greed_index(self):
+        """Get current Fear & Greed Index"""
+        try:
+            # Alternative Fear & Greed API
+            response = requests.get("https://api.alternative.me/fng/", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('data') and len(data['data']) > 0:
+                    current = data['data'][0]
+                    value = int(current['value'])
+                    classification = current['value_classification']
+                    return {"value": value, "classification": classification}
+        except Exception as e:
+            logger.error(f"Error fetching Fear & Greed Index: {str(e)}")
+            
+        return None
+
+    async def get_liquidity_data(self):
+        """Get liquidity data from multiple sources"""
+        liquidity_data = {}
+        
+        try:
+            # Federal Reserve Balance Sheet (FRED API)
+            # Note: FRED API requires a key, but we can try the public endpoint
+            fed_response = requests.get("https://api.stlouisfed.org/fred/series/observations?series_id=WALCL&api_key=demo&file_type=json&limit=5&sort_order=desc", timeout=5)
+            if fed_response.status_code == 200:
+                fed_data = fed_response.json()
+                if fed_data.get('observations'):
+                    latest_fed = fed_data['observations'][0]
+                    liquidity_data['fed_balance_sheet'] = {
+                        'date': latest_fed.get('date'),
+                        'value': latest_fed.get('value')
+                    }
+        except Exception as e:
+            logger.error(f"Error fetching Fed data: {str(e)}")
+        
+        try:
+            # DXY (Dollar Index) from Alpha Vantage free tier
+            # This gives us USD strength which affects global liquidity
+            dxy_response = requests.get("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=EUR&apikey=demo", timeout=5)
+            if dxy_response.status_code == 200:
+                dxy_data = dxy_response.json()
+                if dxy_data.get('Realtime Currency Exchange Rate'):
+                    liquidity_data['usd_strength'] = dxy_data['Realtime Currency Exchange Rate'].get('5. Exchange Rate')
+        except Exception as e:
+            logger.error(f"Error fetching USD strength data: {str(e)}")
+            
+        try:
+            # Global M2 Money Supply approximation using economic indicators
+            # We can get some proxy data from various free APIs
+            m2_response = requests.get("https://api.stlouisfed.org/fred/series/observations?series_id=M2SL&api_key=demo&file_type=json&limit=3&sort_order=desc", timeout=5)
+            if m2_response.status_code == 200:
+                m2_data = m2_response.json()
+                if m2_data.get('observations'):
+                    latest_m2 = m2_data['observations'][0]
+                    liquidity_data['us_m2'] = {
+                        'date': latest_m2.get('date'), 
+                        'value': latest_m2.get('value')
+                    }
+        except Exception as e:
+            logger.error(f"Error fetching M2 data: {str(e)}")
+            
+        return liquidity_data
 
     def format_signal_message(self, analysis_data):
         """Extract and format the clean analysis text from agent response"""
