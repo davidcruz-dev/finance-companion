@@ -75,52 +75,8 @@ class BitcoinTradingBot:
                 azure_endpoint=base_domain
             )
             
-            # Get current Bitcoin price locally (since Foundry can't access live APIs reliably)
-            current_price = await self.get_current_btc_price()
-            price_info = f"Current Bitcoin Price: ${current_price:,.2f}" if current_price else "Unable to fetch current price"
-            
-            # Get current date and time for fresh analysis
-            from datetime import datetime, timezone
-            current_date = datetime.now(timezone.utc)
-            current_year = current_date.year
-            current_month = current_date.month
-            current_day = current_date.day
-            
-            # Determine quarter and season
-            quarter = f"Q{(current_month-1)//3 + 1}"
-            month_name = current_date.strftime("%B")
-            
-            # Create dynamic, fresh analysis prompt
-            prompt = f"""TODAY IS {month_name} {current_day}, {current_year}. You are providing a FRESH Bitcoin market analysis for someone reading this RIGHT NOW. Use this LIVE price data:
-
-{price_info}
-
-CURRENT CONTEXT ({month_name} {current_year}, {quarter}):
-Provide a completely fresh, up-to-date analysis that considers:
-
-1. IMMEDIATE MARKET CONDITIONS (as of {month_name} {current_day}, {current_year})
-   - Current price action and momentum
-   - Recent market events from the past few days/weeks
-   - Current {quarter} {current_year} market dynamics
-
-2. REAL-TIME MACRO ENVIRONMENT
-   - Global economic conditions RIGHT NOW
-   - Central bank policies currently in effect
-   - Current geopolitical factors affecting markets
-
-3. FORWARD-LOOKING ANALYSIS
-   - Next quarter outlook (what's coming in the next 3 months)
-   - Key upcoming events and catalysts
-   - Potential scenarios for the coming weeks/months
-
-REQUIREMENTS:
-- Provide analysis as if you're a market expert giving fresh insights TODAY
-- Reference current market conditions, not historical data from months ago
-- Include forward-looking perspective for upcoming periods
-- Use plain text, simple emojis, no markdown
-- Focus on what's happening NOW and what's coming NEXT
-
-Give me a fresh, current analysis someone would want to read on {month_name} {current_day}, {current_year}."""
+            # Let the foundry agent use its built-in instructions automatically
+            # No prompt needed - the agent has comprehensive instructions to fetch live data and analyze
             
             # Add retry logic for rate limits
             import time
@@ -129,10 +85,10 @@ Give me a fresh, current analysis someone would want to read on {month_name} {cu
             
             for attempt in range(max_retries):
                 try:
-                    # Use direct chat completion with Azure deployment name
+                    # Let foundry agent execute its built-in instructions without any prompt
                     response = await openai_client.chat.completions.create(
-                        model="gpt-4.1",  # This should be the deployment name in Azure
-                        messages=[{"role": "user", "content": prompt}],
+                        model="gpt-4.1",
+                        messages=[{"role": "user", "content": ""}],  # Empty message to trigger built-in instructions
                         temperature=0.7,
                         max_tokens=2000
                     )
