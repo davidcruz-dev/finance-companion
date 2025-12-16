@@ -60,11 +60,19 @@ class BitcoinTradingBot:
             
             logger.info("Using direct API call with API key for Azure AI Foundry")
             
-            # Create OpenAI client with Azure endpoint and API key
+            # Create Azure OpenAI client for AI Foundry
             import openai
-            openai_client = openai.AsyncOpenAI(
+            from openai import AsyncAzureOpenAI
+            
+            # Extract the base domain from the endpoint
+            base_domain = foundry_endpoint.replace('/api/projects/financecompanion', '')
+            
+            logger.info(f"Using Azure OpenAI client with endpoint: {base_domain}")
+            
+            openai_client = AsyncAzureOpenAI(
                 api_key=foundry_api_key,
-                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai"
+                api_version="2024-10-21",
+                azure_endpoint=base_domain
             )
             
             # Get current Bitcoin price locally (since Foundry can't access live APIs reliably)
@@ -96,9 +104,9 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             
             for attempt in range(max_retries):
                 try:
-                    # Use direct chat completion without agent reference for now
+                    # Use direct chat completion with Azure deployment name
                     response = await openai_client.chat.completions.create(
-                        model="gpt-4o", 
+                        model="gpt-4o",  # This should be the deployment name in Azure
                         messages=[{"role": "user", "content": prompt}],
                         temperature=0.7,
                         max_tokens=2000
@@ -213,9 +221,14 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             foundry_endpoint = os.getenv('FOUNDRY_ENDPOINT', 'https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion')
             
             import openai
-            openai_client = openai.AsyncOpenAI(
+            from openai import AsyncAzureOpenAI
+            
+            base_domain = foundry_endpoint.replace('/api/projects/financecompanion', '')
+            
+            openai_client = AsyncAzureOpenAI(
                 api_key=foundry_api_key,
-                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai"
+                api_version="2024-10-21",
+                azure_endpoint=base_domain
             )
             
             # Add retry logic for rate limits
@@ -531,9 +544,14 @@ Focus on education, not trading advice. Include appropriate educational disclaim
             foundry_endpoint = os.getenv('FOUNDRY_ENDPOINT', 'https://financecompanion-resource.services.ai.azure.com/api/projects/financecompanion')
             
             import openai
-            openai_client = openai.AsyncOpenAI(
+            from openai import AsyncAzureOpenAI
+            
+            base_domain = foundry_endpoint.replace('/api/projects/financecompanion', '')
+            
+            openai_client = AsyncAzureOpenAI(
                 api_key=foundry_api_key,
-                base_url=f"{foundry_endpoint.replace('/api/projects/financecompanion', '')}/openai"
+                api_version="2024-10-21",
+                azure_endpoint=base_domain
             )
             
             # Add retry logic for rate limits
