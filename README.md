@@ -1,6 +1,6 @@
-# Bitcoin Trading Bot
+# Bitcoin Strategist
 
-🤖 Advanced Bitcoin trading bot powered by Microsoft Azure AI Foundry with comprehensive market analysis.
+🤖 Advanced Bitcoin strategist powered by Microsoft Azure AI Foundry with comprehensive market analysis.
 
 ## Features
 
